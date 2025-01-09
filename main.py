@@ -7,189 +7,161 @@ import websockets
 from google import genai
 import base64
 
-# Load API key from environment
-os.environ['GOOGLE_API_KEY'] = ''
-MODEL = "gemini-2.0-flash-exp"  # use your model ID
+# Load API key from the environment
+os.environ['GOOGLE_API_KEY'] = 'AIzaSyAqZt7ULUlJXHzIW-bsRHPcP9XCwyPx5cM'
+YGGDRASIL_MODEL = "gemini-2.0-flash-exp"  # Use your model ID
 
-client = genai.Client(
+valkyrie_client = genai.Client(
     http_options={
         'api_version': 'v1alpha',
     }
 )
 
-
-# Mock function for set_light_values
-def set_light_values(brightness, color_temp):
-
+# Mock function for lighting adjustments (representing Mjölnir's power)
+def wield_mjolnir(luminosity, aura_hue):
+    """Adjusts light settings using Mjölnir's strength."""
     return {
-        "brightness": brightness,
-        "colorTemperature": color_temp,
+        "luminosity": luminosity,
+        "auraHue": aura_hue,
     }
 
-# Define the tool (function)
-tool_set_light_values = {
+# Define the divine tool
+tool_wield_mjolnir = {
     "function_declarations": [
         {
-            "name": "set_light_values",
-            "description": "Set the brightness and color temperature of a room light.",
+            "name": "wield_mjolnir",
+            "description": "Channel the power of Mjölnir to adjust light luminosity and aura hue.",
             "parameters": {
                 "type": "OBJECT",
                 "properties": {
-                    "brightness": {
+                    "luminosity": {
                         "type": "NUMBER",
-                        "description": "Light level from 0 to 100. Zero is off and 100 is full brightness"
+                        "description": "Light intensity from 0 to 100. Zero signifies darkness, and 100 represents full illumination."
                     },
-                    "color_temp": {
+                    "aura_hue": {
                         "type": "STRING",
-                        "description": "Color temperature of the light fixture, which can be `daylight`, `cool` or `warm`."
+                        "description": "The hue of light aura, which can be `daylight`, `cool`, or `warm`."
                     }
                 },
-                "required": ["brightness", "color_temp"]
+                "required": ["luminosity", "aura_hue"]
             }
         }
     ]
 }
 
-async def gemini_session_handler(client_websocket: websockets.WebSocketServerProtocol):
-    """Handles the interaction with Gemini API within a websocket session.
+async def bifrost_handler(heimdall_connection: websockets.WebSocketServerProtocol):
+    """Handles the interaction with Yggdrasil API via Bifrost (WebSocket).
 
     Args:
-        client_websocket: The websocket connection to the client.
+        heimdall_connection: The WebSocket connection representing Heimdall's watch.
     """
     try:
-        config_message = await client_websocket.recv()
-        config_data = json.loads(config_message)
-        config = config_data.get("setup", {})
+        asgardian_message = await heimdall_connection.recv()
+        asgardian_data = json.loads(asgardian_message)
+        asgardian_config = asgardian_data.get("setup", {})
         
-        config["tools"] = [tool_set_light_values]
+        asgardian_config["tools"] = [tool_wield_mjolnir]
         
-        async with client.aio.live.connect(model=MODEL, config=config) as session:
-            print("Connected to Gemini API")
+        async with valkyrie_client.aio.live.connect(model=YGGDRASIL_MODEL, config=asgardian_config) as yggdrasil_session:
+            print("Connected to Yggdrasil API")
 
-            async def send_to_gemini():
-                """Sends messages from the client websocket to the Gemini API."""
+            async def odin_to_yggdrasil():
+                """Transfers messages from Heimdall to Yggdrasil."""
                 try:
-                  async for message in client_websocket:
-                      try:
-                          data = json.loads(message)
-                          if "realtime_input" in data:
-                              for chunk in data["realtime_input"]["media_chunks"]:
-                                  if chunk["mime_type"] == "audio/pcm":
-                                      await session.send({"mime_type": "audio/pcm", "data": chunk["data"]})
-                                      
-                                  elif chunk["mime_type"] == "image/jpeg":
-                                      await session.send({"mime_type": "image/jpeg", "data": chunk["data"]})
-                                      
-                      except Exception as e:
-                          print(f"Error sending to Gemini: {e}")
-                  print("Client connection closed (send)")
+                    async for heimdall_message in heimdall_connection:
+                        try:
+                            bifrost_data = json.loads(heimdall_message)
+                            if "realtime_input" in bifrost_data:
+                                for fragment in bifrost_data["realtime_input"]["media_chunks"]:
+                                    if fragment["mime_type"] == "audio/pcm":
+                                        await yggdrasil_session.send({"mime_type": "audio/pcm", "data": fragment["data"]})
+                                        
+                                    elif fragment["mime_type"] == "image/jpeg":
+                                        await yggdrasil_session.send({"mime_type": "image/jpeg", "data": fragment["data"]})
+                                        
+                        except Exception as e:
+                            print(f"Error sending to Yggdrasil: {e}")
+                    print("Heimdall connection closed (send)")
                 except Exception as e:
-                     print(f"Error sending to Gemini: {e}")
+                    print(f"Error sending to Yggdrasil: {e}")
                 finally:
-                   print("send_to_gemini closed")
+                    print("odin_to_yggdrasil closed")
 
-
-
-            async def receive_from_gemini():
-                """Receives responses from the Gemini API and forwards them to the client, looping until turn is complete."""
+            async def yggdrasil_to_odin():
+                """Receives divine messages from Yggdrasil and relays them to Heimdall."""
                 try:
                     while True:
                         try:
-                            print("receiving from gemini")
-                            async for response in session.receive():
-                                #first_response = True
-                                #print(f"response: {response}")
-                                if response.server_content is None:
-                                    if response.tool_call is not None:
-                                          #handle the tool call
-                                           print(f"Tool call received: {response.tool_call}")
+                            async for yggdrasil_response in yggdrasil_session.receive():
+                                if yggdrasil_response.server_content is None:
+                                    if yggdrasil_response.tool_call is not None:
+                                        print(f"Tool call received: {yggdrasil_response.tool_call}")
+                                        tool_invocations = yggdrasil_response.tool_call.function_calls
+                                        mjolnir_responses = []
 
-                                           function_calls = response.tool_call.function_calls
-                                           function_responses = []
+                                        for invocation in tool_invocations:
+                                            mjolnir_name = invocation.name
+                                            mjolnir_args = invocation.args
+                                            invocation_id = invocation.id
 
-                                           for function_call in function_calls:
-                                                 name = function_call.name
-                                                 args = function_call.args
-                                                 # Extract the numeric part from Gemini's function call ID
-                                                 call_id = function_call.id
+                                            if mjolnir_name == "wield_mjolnir":
+                                                try:
+                                                    outcome = wield_mjolnir(int(mjolnir_args["luminosity"]), mjolnir_args["aura_hue"])
+                                                    mjolnir_responses.append(
+                                                        {
+                                                            "name": mjolnir_name,
+                                                            "response": {"result": outcome},
+                                                            "id": invocation_id
+                                                        }
+                                                    )
+                                                    await heimdall_connection.send(json.dumps({"text": json.dumps(mjolnir_responses)}))
+                                                    print("Mjolnir wielded successfully")
+                                                except Exception as e:
+                                                    print(f"Error wielding Mjolnir: {e}")
+                                                    continue
 
-                                                 # Validate function name
-                                                 if name == "set_light_values":
-                                                      try:
-                                                          result = set_light_values(int(args["brightness"]), args["color_temp"])
-                                                          function_responses.append(
-                                                             {
-                                                                 "name": name,
-                                                                 #"response": {"result": "The light is broken."},
-                                                                 "response": {"result": result},
-                                                                 "id": call_id  
-                                                             }
-                                                          ) 
-                                                          await client_websocket.send(json.dumps({"text": json.dumps(function_responses)}))
-                                                          print("Function executed")
-                                                      except Exception as e:
-                                                          print(f"Error executing function: {e}")
-                                                          continue
+                                        await yggdrasil_session.send(mjolnir_responses)
+                                        continue
 
-
-                                           # Send function response back to Gemini
-                                           print(f"function_responses: {function_responses}")
-                                           await session.send(function_responses)
-                                           continue
-
-                                    #print(f'Unhandled server message! - {response}')
-                                    #continue
-
-                                model_turn = response.server_content.model_turn
-                                if model_turn:
-                                    for part in model_turn.parts:
-                                        #print(f"part: {part}")
-                                        if hasattr(part, 'text') and part.text is not None:
-                                            #print(f"text: {part.text}")
-                                            await client_websocket.send(json.dumps({"text": part.text}))
-                                        elif hasattr(part, 'inline_data') and part.inline_data is not None:
-                                            # if first_response:
-                                            #print("audio mime_type:", part.inline_data.mime_type)
-                                                #first_response = False
-                                            base64_audio = base64.b64encode(part.inline_data.data).decode('utf-8')
-                                            await client_websocket.send(json.dumps({
+                                divine_turn = yggdrasil_response.server_content.model_turn
+                                if divine_turn:
+                                    for fragment in divine_turn.parts:
+                                        if hasattr(fragment, 'text') and fragment.text is not None:
+                                            await heimdall_connection.send(json.dumps({"text": fragment.text}))
+                                        elif hasattr(fragment, 'inline_data') and fragment.inline_data is not None:
+                                            base64_audio = base64.b64encode(fragment.inline_data.data).decode('utf-8')
+                                            await heimdall_connection.send(json.dumps({
                                                 "audio": base64_audio,
                                             }))
-                                            print("audio received")
+                                            print("Audio received")
 
-                                if response.server_content.turn_complete:
+                                if yggdrasil_response.server_content.turn_complete:
                                     print('\n<Turn complete>')
                         except websockets.exceptions.ConnectionClosedOK:
-                            print("Client connection closed normally (receive)")
-                            break  # Exit the loop if the connection is closed
+                            print("Heimdall connection closed normally (receive)")
+                            break
                         except Exception as e:
-                            print(f"Error receiving from Gemini: {e}")
-                            break # exit the lo
+                            print(f"Error receiving from Yggdrasil: {e}")
+                            break
 
                 except Exception as e:
-                      print(f"Error receiving from Gemini: {e}")
+                    print(f"Error receiving from Yggdrasil: {e}")
                 finally:
-                      print("Gemini connection closed (receive)")
+                    print("Yggdrasil connection closed (receive)")
 
-
-            # Start send loop
-            send_task = asyncio.create_task(send_to_gemini())
-            # Launch receive loop as a background task
-            receive_task = asyncio.create_task(receive_from_gemini())
-            await asyncio.gather(send_task, receive_task)
-
+            odin_task = asyncio.create_task(odin_to_yggdrasil())
+            thor_task = asyncio.create_task(yggdrasil_to_odin())
+            await asyncio.gather(odin_task, thor_task)
 
     except Exception as e:
-        print(f"Error in Gemini session: {e}")
+        print(f"Error in Bifrost handler: {e}")
     finally:
-        print("Gemini session closed.")
-
+        print("Bifrost session closed.")
 
 async def main() -> None:
-    async with websockets.serve(gemini_session_handler, "localhost", 6106):
-        print("SOCKET IS SET AND IS BEING PUSHED ON THE LOCAL HOST ")
+    async with websockets.serve(bifrost_handler, "localhost", 6106):
+        print("BIFROST IS READY TO CONNECT ASGARD AND MIDGARD")
         await asyncio.Future()  # Keep the server running indefinitely
-
 
 if __name__ == "__main__":
     asyncio.run(main())
