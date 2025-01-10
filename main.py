@@ -8,7 +8,7 @@ from google import genai
 import base64
 
 # Load API key from the environment
-os.environ['GOOGLE_API_KEY'] = 'AIzaSyAqZt7ULUlJXHzIW-bsRHPcP9XCwyPx5cM'
+os.environ['GOOGLE_API_KEY'] = ''
 YGGDRASIL_MODEL = "gemini-2.0-flash-exp"  # Use your model ID
 
 valkyrie_client = genai.Client(
