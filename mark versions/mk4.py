@@ -20,7 +20,7 @@ except Exception as e:
     exit()
 
 # Initialize Groq client
-client = Groq(api_key="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")
+client = Groq(api_key="")
 
 # Initialize TTS engine
 tts_engine = pyttsx3.init()
