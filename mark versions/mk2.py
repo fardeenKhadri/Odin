@@ -17,7 +17,7 @@ except Exception as e:
     exit()
 
 # Initialize Groq client
-client = Groq(api_key="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")
+client = Groq(api_key="")
 
 def process_image(image_path):
     try:
